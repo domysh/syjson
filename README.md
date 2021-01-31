@@ -1,8 +1,8 @@
-# SyJson - A Library of syncing json to variables in a simple way
+# SyJson - Sync variables to a json file in a simple way
 
 ### What this library do?
 
-This library make simple create a json file and read/write directly from this. This can be very usefull and easy to use when we need to create small files such as a settings file, avoiding to write and read this manualy.
+This library make simple create a json file and read/write directly from this. This can be very useful and easy to use when we need to create small files such as a settings file, avoiding to write and read this manualy.
 
 ### Example of use
 
