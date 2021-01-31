@@ -1,0 +1,17 @@
+Metadata-Version: 2.1
+Name: syjson
+Version: 1.0.2
+Summary: A library for manage jsons file as dicts
+Home-page: https://github.com/DomySh/syjson
+Author: DomySh
+Author-email: me@domysh.com
+License: UNKNOWN
+Description: # syjson
+        A library for manage json file as variable good for updated and small json file such as settings file
+        
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown

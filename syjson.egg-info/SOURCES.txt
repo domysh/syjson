@@ -1,0 +1,7 @@
+README.md
+setup.py
+syjson/__init__.py
+syjson.egg-info/PKG-INFO
+syjson.egg-info/SOURCES.txt
+syjson.egg-info/dependency_links.txt
+syjson.egg-info/top_level.txt
