@@ -37,7 +37,7 @@ class SyJsonObj:
         finally:
             self.request_lock.release()
     
-    def _get_synced_item(self,key,v):
+    def _syncing(self,key,v):
         """ tranform traditional classes object in synced object """
         if type(v) in (list,tuple):
             v = SyncedList(self,key)
@@ -47,7 +47,7 @@ class SyJsonObj:
             v = InnerObject(self,key)
         return v
 
-    def _get_desynced_item(self,v):
+    def _desyncing(self,v):
         """ tranform synced object in traditional classes """
         if issubclass(v.__class__,SyJsonObj):
             return v.var()
@@ -67,16 +67,22 @@ class InnerObject(SyJsonObj):
 
     def _write(self,var):
         """ write function without mutex lock (unsafe to use, but used internaly) """
-        var = self.root._get_desynced_item(var)
+        var = self.root._desyncing(var)
         val = self.root._read() 
         val[self.root_key] = var
         self.root._write(val)
     
-    def __ge__(self,compare_to): return self.var().__ge__(compare_to)
-    def __le__(self,compare_to): return self.var().__le__(compare_to)
-    def __gt__(self,compare_to): return self.var().__gt__(compare_to)
-    def __lt__(self,compare_to): return self.var().__lt__(compare_to)
-    def __eq__(self,compare_to): return self.var().__eq__(compare_to)
+    def __ge__(self,compare_to):
+        return self.var().__ge__(self._desyncing(compare_to))
+    def __le__(self,compare_to):
+        return self.var().__le__(self._desyncing(compare_to))
+    def __gt__(self,compare_to):
+        return self.var().__gt__(self._desyncing(compare_to))
+    def __lt__(self,compare_to):
+        return self.var().__lt__(self._desyncing(compare_to))
+    def __eq__(self,compare_to):
+        return self.var().__eq__(self._desyncing(compare_to))
+
     def __str__(self):return self.var().__str__()
 
 class InnerIterObject(InnerObject):
@@ -86,10 +92,10 @@ class InnerIterObject(InnerObject):
         InnerObject.__init__(self,root,key)
 
     def __getitem__(self,key):
-        return self._get_synced_item(key,self.var()[key])
+        return self._syncing(key,self.var()[key])
 
     def __setitem__(self, key, value):
-        value = self._get_desynced_item(value)
+        value = self._desyncing(value)
         val = self.var() 
         val[key] = value
         self.sync(val)
@@ -104,7 +110,7 @@ class SyncedList(InnerIterObject):
         InnerIterObject.__init__(self,root,key)
 
     def append(self,v):
-        v = self._get_desynced_item(v)
+        v = self._desyncing(v)
         val = self.var()
         res = val.append(v)
         self.sync(val)
@@ -118,7 +124,7 @@ class SyncedList(InnerIterObject):
     def pop(self,num=-1):
         val = self.var()
         res = val.pop(num)
-        res = self._get_desynced_item(res)
+        res = self._desyncing(res)
         self.sync(val)
         return res
 
@@ -146,7 +152,7 @@ class SyJson(SyncedDict):
     """ create a variable directly linked with a file,
     you can write values directly into the file and read in the sameway """
 
-    def __init__(self,path:str, create_file=True, pretty=False):
+    def __init__(self,path:str, create_file:bool=True, pretty:int=None):
         self.file_path = os.path.abspath(path)
         if not os.path.exists(self.file_path):
             if create_file:
@@ -171,15 +177,14 @@ class SyJson(SyncedDict):
 
     def _write(self,dic):
         """ write on file new value of a paramether """
-        dic = self._get_desynced_item(dic)
+        dic = self._desyncing(dic)
         self.f_lock.acquire()
         try:
             with open(self.file_path,'wt') as fl:
-                if(self.prittyfy):
-                    fl.write(json.dumps(dic,indent=3))
+                if self.prittyfy:
+                    fl.write(json.dumps(dic,indent=self.prittyfy))
                 else: 
                     fl.write(json.dumps(dic))
-                fl.flush()
         finally:
             self.f_lock.release()
     
@@ -187,10 +192,10 @@ class SyJson(SyncedDict):
 
     def __getitem__(self,key):
         d = self._read()
-        return self._get_synced_item(key,d[key])
+        return self._syncing(key,d[key])
         
     def __setitem__(self, key, value):
-        value = self._get_desynced_item(value)
+        value = self._desyncing(value)
         d = self._read()
         d[key] = value
         self._write(d)
