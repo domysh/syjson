@@ -63,12 +63,13 @@ now we can use this class for create/read a json file
 
 ```python
 synced_json = SyJson(
-    "file.json",        #Path of the json file
-
-    create_file = True, #If the file does not exists,
-                        #this will automatically create that file
-    pretty = None       #If setted to a number, the file will have an
-                        #indentation of 'pretty' spaces
+    "file.json",           #Path of the json file
+    create_file = True,    #If the file does not exists,
+                           #this will automatically create that file
+    pretty = None          #If setted to a number, the file will have an
+                           #indentation of 'pretty' spaces
+    get_primitives = False #non-iterable variables will be not return
+                           #synced object but primitive python objects
 )
 ```
 

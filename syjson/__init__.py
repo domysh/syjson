@@ -10,6 +10,7 @@ class SyJsonObj:
     #Methods that must be overrided
     def __init__(self):
         self.request_lock = None 
+        self.get_primitives = None
         raise Exception('Abstract Class')
 
     def __getitem__(self,key):
@@ -43,7 +44,7 @@ class SyJsonObj:
             v = SyncedList(self,key)
         elif type(v) in (dict,):
             v = SyncedDict(self,key)
-        else:
+        elif not self.get_primitives:
             v = InnerObject(self,key)
         return v
 
@@ -59,6 +60,7 @@ class InnerObject(SyJsonObj):
     def __init__(self,root:SyJsonObj,key):
         self.root = root
         self.request_lock = self.root.request_lock
+        self.get_primitives = self.root.get_primitives
         self.root_key = key
 
     def _read(self):
@@ -152,7 +154,13 @@ class SyJson(SyncedDict):
     """ create a variable directly linked with a file,
     you can write values directly into the file and read in the sameway """
 
-    def __init__(self,path:str, create_file:bool=True, pretty:int=None):
+    def __init__(self,path:str, create_file:bool=True, pretty:int=None, get_primitives:bool=False):
+        """Paramathers
+            path - path for the json file
+            create-file - create the file if the parh don't have a file
+            pretty - insert a number of spaces for indent the json file
+            get-primitives - non-iterable variables will be not synced object
+        """
         self.file_path = os.path.abspath(path)
         if not os.path.exists(self.file_path):
             if create_file:
@@ -163,6 +171,7 @@ class SyJson(SyncedDict):
         self.f_lock = threading.Lock()
         self.request_lock = threading.Lock()
         self.prittyfy = pretty
+        self.get_primitives = get_primitives
     
     def _read(self):
         """ read function without mutex lock (unsafe to use, but used internaly) """
