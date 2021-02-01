@@ -152,15 +152,14 @@ class SyncedDict(InnerIterObject):
 
 class SyJson(SyncedDict):
     """ create a variable directly linked with a file,
-    you can write values directly into the file and read in the sameway """
+    you can write values directly into the file and read in the sameway
+    Paramathers:
+        path - path for the json file
+        create-file - create the file if the parh don't have a file
+        pretty - insert a number of spaces for indent the json file
+        get-primitives - non-iterable variables will be not synced object"""
 
     def __init__(self,path:str, create_file:bool=True, pretty:int=None, get_primitives:bool=False):
-        """Paramathers
-            path - path for the json file
-            create-file - create the file if the parh don't have a file
-            pretty - insert a number of spaces for indent the json file
-            get-primitives - non-iterable variables will be not synced object
-        """
         self.file_path = os.path.abspath(path)
         if not os.path.exists(self.file_path):
             if create_file:
