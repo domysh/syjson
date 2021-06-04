@@ -70,6 +70,7 @@ synced_json = SyJson(
                            #indentation of 'pretty' spaces
     get_primitives = False #non-iterable variables will be not return
                            #synced object but primitive python objects
+    bson = False           #Save information in bson format instead of json format
 )
 ```
 

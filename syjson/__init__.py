@@ -1,4 +1,4 @@
-import threading, os
+import threading, os, bson
 try:
     import ujson as json
 except ImportError:
@@ -159,7 +159,7 @@ class SyJson(SyncedDict):
         pretty - insert a number of spaces for indent the json file
         get-primitives - non-iterable variables will be not synced object"""
 
-    def __init__(self,path:str, create_file:bool=True, pretty:int=None, get_primitives:bool=False):
+    def __init__(self,path:str, create_file:bool=True, pretty:int=None, get_primitives:bool=False, bson:bool=False):
         self.file_path = os.path.abspath(path)
         if not os.path.exists(self.file_path):
             if create_file:
@@ -171,14 +171,23 @@ class SyJson(SyncedDict):
         self.request_lock = threading.Lock()
         self.prittyfy = pretty
         self.get_primitives = get_primitives
+        self.bson = bson
+
+    def __loads(self,data):
+        if self.bson: return bson.loads(data)
+        else: return json.loads(data.decode())
     
+    def __dumps(self,data, indent = None):
+        if self.bson: return bson.dumps(data)
+        else: return json.dumps(data, indent=indent).encode()
+
     def _read(self):
         """ read function without mutex lock (unsafe to use, but used internaly) """
         self.f_lock.acquire()
         try:
-            with open(self.file_path,'rt') as fl:
+            with open(self.file_path,'rb') as fl:
                 f = fl.read()
-            if f != '': return json.loads(f)
+            if f != b'': return self.__loads(f)
             else: return {}
         finally:
             self.f_lock.release()
@@ -188,11 +197,11 @@ class SyJson(SyncedDict):
         dic = self._desyncing(dic)
         self.f_lock.acquire()
         try:
-            with open(self.file_path,'wt') as fl:
+            with open(self.file_path,'wb') as fl:
                 if self.prittyfy:
-                    fl.write(json.dumps(dic,indent=self.prittyfy))
+                    fl.write(self.__dumps(dic,indent=self.prittyfy))
                 else: 
-                    fl.write(json.dumps(dic))
+                    fl.write(self.__dumps(dic))
         finally:
             self.f_lock.release()
     
