@@ -43,7 +43,7 @@ You can install this library using PyPi (pip)
 pip3 install syjson
 ```
 
-This library is compatible with ujson module, you can inall ujson with:
+This library is compatible with ujson module, you can install ujson with:
 
 ```bash
 pip3 install ujson
@@ -70,6 +70,7 @@ synced_json = SyJson(
                            #indentation of 'pretty' spaces
     get_primitives = False #non-iterable variables will be not return
                            #synced object but primitive python objects
+    bson = False           #Save information in bson format instead of json format
 )
 ```
 
