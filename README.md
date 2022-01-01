@@ -14,14 +14,6 @@ You can install this library using PyPi (pip)
 pip3 install syjson
 ```
 
-This library is compatible with ujson module, you can install ujson with:
-
-```bash
-pip3 install ujson
-```
-
-and the library will automaticaly use ujson module instead of python standard json module
-
 ### How to use
 
 At first you can import SyJson class writing:
@@ -39,12 +31,13 @@ synced_json = SyJson(
                            #this will automatically create that file
     pretty = None          #If setted to a number, the file will have an
                            #indentation of 'pretty' spaces
-    bson = False           #Save information in bson format instead of json format
     cache = True           #The file is readed only the first time with this option set to
                            #True, if your file have to be modified during the execution set this to false
                            #(Useful for debugging)
 )
 ```
+
+This library use orjson for load and dump json files
 
 ---
 

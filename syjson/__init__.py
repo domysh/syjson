@@ -1,8 +1,4 @@
-import threading, os, pybson
-try:
-    import ujson as json
-except ImportError:
-    import json
+import threading, os, orjson
 
 class InnerObject:
     """ A general Synced variable """
@@ -108,7 +104,7 @@ class SyJson(SyncedDict):
     """ create a variable directly linked with a file,
     you can write values directly into the file and read in the sameway"""
 
-    def __init__(self,path:str, create_file:bool=True, pretty:int=None, bson:bool=False, cache:bool = True):
+    def __init__(self,path:str, create_file:bool=True, pretty:bool=False, cache:bool = True):
         self.file_path = os.path.abspath(path)
         if not os.path.exists(self.file_path):
             if create_file:
@@ -118,20 +114,11 @@ class SyJson(SyncedDict):
                 raise FileNotFoundError(f'The file {path} doesn\'t exist!')
         self.f_lock = threading.Lock()
         self.prittyfy = pretty
-        self.bson = bson
         self.cache = cache
         self._cached = None
         #Make compatible this class with the uppers
         self.keychain = []
         self.root = self
-
-    def __loads(self,data):
-        if self.bson: return pybson.loads(data)
-        else: return json.loads(data.decode())
-    
-    def __dumps(self,data, indent = None):
-        if self.bson: return pybson.dumps(data)
-        else: return json.dumps(data, indent=indent).encode()
 
     def var(self,keychain=None):
         """ read function without mutex lock (unsafe to use, but used internaly) """
@@ -160,9 +147,9 @@ class SyJson(SyncedDict):
     def _file_read(self):
         self.f_lock.acquire()
         try:
-            with open(self.file_path,'rb') as fl:
+            with open(self.file_path,'r') as fl:
                 f = fl.read()
-            if f != b'': return self.__loads(f)
+            if f != '': return orjson.loads(f)
             else: return {}
         finally:
             self.f_lock.release()
@@ -180,11 +167,12 @@ class SyJson(SyncedDict):
             dic = value
         self.f_lock.acquire()
         try:
+            if self.prittyfy:
+                value = orjson.dumps(dic,option=orjson.OPT_INDENT_2)
+            else: 
+                value = orjson.dumps(dic)
             with open(self.file_path,'wb') as fl:
-                if self.prittyfy:
-                    fl.write(self.__dumps(dic,indent=self.prittyfy))
-                else: 
-                    fl.write(self.__dumps(dic))
+                fl.write(value)
             if self.cache: self._cached = dic
         finally:
             self.f_lock.release()

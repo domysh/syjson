@@ -5,10 +5,10 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="syjson",
-    version="2.0.0",
+    version="2.1.0",
     author="DomySh",
     author_email="me@domysh.com",
-    install_requires=["pybson"],
+    install_requires=["orjson"],
     description="A library for manage jsons files as dicts",
     long_description=long_description,
     long_description_content_type="text/markdown",
