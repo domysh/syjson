@@ -47,6 +47,9 @@ class InnerIterObject(InnerObject):
     def __init__(self,root:InnerObject,keychain):
         InnerObject.__init__(self,root,keychain)
 
+    def __contains__(self, key):
+        return key in self.var()
+    
     def __getitem__(self,key):
         return self.synced(self.var()[key],key)
 
