@@ -4,35 +4,6 @@
 
 This library make simple create a json file and read/write directly from this. This can be very useful and easy to use when we need to create small files such as a settings file, avoiding to write and read this manualy.
 
-### Example of use
-
-```python
-from syjson import SyJson
-import time
-
-syfile = SyJson("/path/to/file.json")
-TIMEOUT = syfile.create("timeout_counter",1000)
-RANGE_C = syfile.create("counter_range",[-100,100])
-TO_PRINT = syfile.create("to_print",{"prefix":"","postfix":"num"})
-
-if __name__ == "__main__":
-    if TIMEOUT > 10:
-        TIMEOUT.sync(10)
-        print("Can't use a timeout > 10, timeout was setted to 10")
-    if RANGE_C[0] < 0:
-        RANGE_C[0] = 0
-        print("Counter can't start from a negative value, start was setted to 0")
-    if RANGE_C[0] > RANGE_C[1]:
-        exit("Illegal values! Exiting")
-    for i in range(RANGE_C[0].var(),RANGE_C[1].var()):
-        print(TO_PRINT["prefix"].var(),i,TO_PRINT["postfix"].var())
-        time.sleep(TIMEOUT.var())
-"""
-You can change in the json file the values during the execution,
-values will change during the execution and modify the behavior of the cycle
-"""
-```
-
 ### How to Install
 
 You can install this library using PyPi (pip)
@@ -49,7 +20,7 @@ This library is compatible with ujson module, you can install ujson with:
 pip3 install ujson
 ```
 
-and the library will automaticaly use ujson module instead of python json module
+and the library will automaticaly use ujson module instead of python standard json module
 
 ### How to use
 
@@ -60,7 +31,7 @@ from syjson import SyJson
 ```
 
 now we can use this class for create/read a json file
-
+pretty:int=None, bson:bool=False, cache:bool = True
 ```python
 synced_json = SyJson(
     "file.json",           #Path of the json file
@@ -68,15 +39,12 @@ synced_json = SyJson(
                            #this will automatically create that file
     pretty = None          #If setted to a number, the file will have an
                            #indentation of 'pretty' spaces
-    get_primitives = False #non-iterable variables will be not return
-                           #synced object but primitive python objects
     bson = False           #Save information in bson format instead of json format
+    cache = True           #The file is readed only the first time with this option set to
+                           #True, if your file have to be modified during the execution set this to false
+                           #(Useful for debugging)
 )
 ```
-
-the values setted previusly are setted by default except the path that is an obbligatory paramether.
-
-After created SyJson object, we can start to use this object as it is a python dict. Every object readed and writed from SyJson object it's a subclass of SyJsonObj. This because every write or read from these variable will be readed/writed directly from the target file. The file is opened and closed at every operation, so no close function is needed to be called at the end of the use of this class.
 
 ---
 
@@ -94,7 +62,7 @@ All SyJson object have these functionalityes
 
 ---
 
-In dicts SyJsonObj there is an additional function that can be usefull in a lot of situation
+In Synced dicts there is an additional function that can be usefull in a lot of situation
 
 #### --> synced_json.create( key, default_value )
 

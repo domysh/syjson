@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="syjson",
-    version="1.4",
+    version="2.0.0",
     author="DomySh",
     author_email="me@domysh.com",
     install_requires=["pybson"],

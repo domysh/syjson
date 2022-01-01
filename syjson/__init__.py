@@ -4,139 +4,93 @@ try:
 except ImportError:
     import json
 
-class SyJsonObj:
-    """ Abstract class for identify an object linked to a file """
-
-    #Methods that must be overrided
-    def __init__(self):
-        self.request_lock = None 
-        self.get_primitives = None
-        raise Exception('Abstract Class')
-
-    def __getitem__(self,key):
-        raise Exception('Abstract Class')
-
-    def _read(self):
-        raise Exception('Abstract Class')
-
-    def _write(self,var):
-        raise Exception('Abstract Class')
-
-    def var(self):
-        """ read from file actual value of the var """
-        self.request_lock.acquire()
-        try:
-            return self._read()
-        finally:
-            self.request_lock.release()
-
-    def sync(self,var):
-        """ write on file new value of a paramether """
-        self.request_lock.acquire()
-        try:
-            return self._write(var)
-        finally:
-            self.request_lock.release()
-    
-    def _syncing(self,key,v):
-        """ tranform traditional classes object in synced object """
-        if type(v) in (list,tuple):
-            v = SyncedList(self,key)
-        elif type(v) in (dict,):
-            v = SyncedDict(self,key)
-        elif not self.get_primitives:
-            v = InnerObject(self,key)
-        return v
-
-    def _desyncing(self,v):
-        """ tranform synced object in traditional classes """
-        if issubclass(v.__class__,SyJsonObj):
-            return v.var()
-        return v
-
-class InnerObject(SyJsonObj):
+class InnerObject:
     """ A general Synced variable """
 
-    def __init__(self,root:SyJsonObj,key):
+    def __init__(self,root,keychain):
         self.root = root
-        self.request_lock = self.root.request_lock
-        self.get_primitives = self.root.get_primitives
-        self.root_key = key
+        self.keychain = keychain
 
-    def _read(self):
+    def var(self):
         """ read function without mutex lock (unsafe to use, but used internaly) """
-        return self.root._read()[self.root_key]
+        return self.root.var(self.keychain)
 
-    def _write(self,var):
-        """ write function without mutex lock (unsafe to use, but used internaly) """
-        var = self.root._desyncing(var)
-        val = self.root._read() 
-        val[self.root_key] = var
-        self.root._write(val)
+    def sync(self,val):
+        self.root.sync(val, keychain=self.keychain)
     
     def __ge__(self,compare_to):
-        return self.var().__ge__(self._desyncing(compare_to))
+        return self.var().__ge__(self.desynced(compare_to))
     def __le__(self,compare_to):
-        return self.var().__le__(self._desyncing(compare_to))
+        return self.var().__le__(self.desynced(compare_to))
     def __gt__(self,compare_to):
-        return self.var().__gt__(self._desyncing(compare_to))
+        return self.var().__gt__(self.desynced(compare_to))
     def __lt__(self,compare_to):
-        return self.var().__lt__(self._desyncing(compare_to))
+        return self.var().__lt__(self.desynced(compare_to))
     def __eq__(self,compare_to):
-        return self.var().__eq__(self._desyncing(compare_to))
-
+        return self.var().__eq__(self.desynced(compare_to))
     def __str__(self):return self.var().__str__()
+
+    def synced(self,v, key):
+        """ tranform traditional classes object in synced object """
+        if type(v) in (list,tuple):
+            v = SyncedList(self.root,self.keychain+[key])
+        elif type(v) in (dict,):
+            v = SyncedDict(self.root,self.keychain+[key])
+        return v
+
+    @staticmethod
+    def desynced(v):
+        """ tranform synced object in traditional classes """
+        if issubclass(v.__class__,InnerObject):
+            return v.var()
+        return v
 
 class InnerIterObject(InnerObject):
     """ A general Synced iterable variable """
 
-    def __init__(self,root:SyJsonObj,key):
-        InnerObject.__init__(self,root,key)
+    def __init__(self,root:InnerObject,keychain):
+        InnerObject.__init__(self,root,keychain)
 
     def __getitem__(self,key):
-        return self._syncing(key,self.var()[key])
+        return self.synced(self.var()[key],key)
 
     def __setitem__(self, key, value):
-        value = self._desyncing(value)
-        val = self.var() 
-        val[key] = value
-        self.sync(val)
+        self.root.sync(self.desynced(value),keychain=self.keychain+[key])
     
+    def __delitem__(self,name):
+        val = self.var()
+        del val[name]
+        self.sync(val)
+
     def __len__(self):
         return self.var().__len__()
 
 class SyncedList(InnerIterObject):
     """ A Synced list variable """
 
-    def __init__(self,root:SyJsonObj,key):
-        InnerIterObject.__init__(self,root,key)
+    def __init__(self,root:InnerObject,keychain):
+        InnerIterObject.__init__(self,root,keychain)
 
     def append(self,v):
-        v = self._desyncing(v)
+        v = self.desynced(v)
         val = self.var()
         res = val.append(v)
         self.sync(val)
         return res
 
-    def __delitem__(self,name):
+    def pop(self,*args,**kargs):
         val = self.var()
-        del val[name]
-        self.sync(val)
-
-    def pop(self,num=-1):
-        val = self.var()
-        res = val.pop(num)
-        res = self._desyncing(res)
+        res = val.pop(*args,**kargs)
         self.sync(val)
         return res
 
-    def index(self,arg):return self.var().index(arg)
+    def index(self,arg): return self.var().index(arg)
 
 class SyncedDict(InnerIterObject):
     """ A Synced dict variable """
 
-    def __init__(self,root:SyJsonObj,key):
-        InnerIterObject.__init__(self,root,key)
+    def __init__(self,root:InnerObject,keychain):
+        InnerIterObject.__init__(self,root,keychain)
     
     def create(self,key,default):
         """ With this method, you can create a synced variable
@@ -145,33 +99,31 @@ class SyncedDict(InnerIterObject):
             self[key] = default
         return self[key]
         
-    def keys(self):return self.var().keys()
-    def values(self):return self.var().values()
-    def items(self):return self.var().items()
+    def keys(self):return self.root.var(keychain=self.keychain).keys()
+    def values(self):return self.root.var(keychain=self.keychain).values()
+    def items(self):return self.root.var(keychain=self.keychain).items()
 
 
 class SyJson(SyncedDict):
     """ create a variable directly linked with a file,
-    you can write values directly into the file and read in the sameway
-    Paramathers:
-        path - path for the json file
-        create-file - create the file if the parh don't have a file
-        pretty - insert a number of spaces for indent the json file
-        get-primitives - non-iterable variables will be not synced object"""
+    you can write values directly into the file and read in the sameway"""
 
-    def __init__(self,path:str, create_file:bool=True, pretty:int=None, get_primitives:bool=False, bson:bool=False):
+    def __init__(self,path:str, create_file:bool=True, pretty:int=None, bson:bool=False, cache:bool = True):
         self.file_path = os.path.abspath(path)
         if not os.path.exists(self.file_path):
             if create_file:
                 with open(self.file_path,'wt') as fl:
                     fl.write('')
             else:
-                raise Exception(f'The file {path} doesn\'t exist!')
+                raise FileNotFoundError(f'The file {path} doesn\'t exist!')
         self.f_lock = threading.Lock()
-        self.request_lock = threading.Lock()
         self.prittyfy = pretty
-        self.get_primitives = get_primitives
         self.bson = bson
+        self.cache = cache
+        self._cached = None
+        #Make compatible this class with the uppers
+        self.keychain = []
+        self.root = self
 
     def __loads(self,data):
         if self.bson: return pybson.loads(data)
@@ -181,8 +133,31 @@ class SyJson(SyncedDict):
         if self.bson: return pybson.dumps(data)
         else: return json.dumps(data, indent=indent).encode()
 
-    def _read(self):
+    def var(self,keychain=None):
         """ read function without mutex lock (unsafe to use, but used internaly) """
+        if self.cache: 
+            if self._cached is None:
+                self._cached = self._file_read()
+            return self._resolve_read_keychain(self._cached,keychain)
+        else:
+            return self._resolve_read_keychain(self._file_read(),keychain)
+    
+    @staticmethod
+    def _resolve_read_keychain(dictionary,keychain):
+        res = dictionary
+        if not keychain is None:
+            for k in keychain:
+                res = res[k]
+        return res
+
+    @staticmethod
+    def _resolve_write_keychain(dictionary,value,keychain):
+        res = dictionary
+        for k in keychain[:-1]:
+            res = res[k]
+        res[keychain[-1]] = value       
+
+    def _file_read(self):
         self.f_lock.acquire()
         try:
             with open(self.file_path,'rb') as fl:
@@ -192,9 +167,17 @@ class SyJson(SyncedDict):
         finally:
             self.f_lock.release()
 
-    def _write(self,dic):
+    def reload(self):
+        if self.cache: self._cached = self._file_read()
+
+    def sync(self,value,keychain=None):
         """ write on file new value of a paramether """
-        dic = self._desyncing(dic)
+        value = self.desynced(value)
+        if not keychain is None:
+            dic = self.var()
+            self._resolve_write_keychain(dic,value,keychain)
+        else:
+            dic = value
         self.f_lock.acquire()
         try:
             with open(self.file_path,'wb') as fl:
@@ -202,17 +185,9 @@ class SyJson(SyncedDict):
                     fl.write(self.__dumps(dic,indent=self.prittyfy))
                 else: 
                     fl.write(self.__dumps(dic))
+            if self.cache: self._cached = dic
         finally:
             self.f_lock.release()
     
     def __str__(self):return self.var().__str__()
-
-    def __getitem__(self,key):
-        d = self._read()
-        return self._syncing(key,d[key])
         
-    def __setitem__(self, key, value):
-        value = self._desyncing(value)
-        d = self._read()
-        d[key] = value
-        self._write(d)
