@@ -128,7 +128,7 @@ class SyJson(SyncedDict):
         if self.cache: 
             if self._cached is None:
                 self._cached = self._file_read()
-            return self._resolve_read_keychain(self._cached,keychain)
+            return self._resolve_read_keychain(dict(self._cached),keychain)
         else:
             return self._resolve_read_keychain(self._file_read(),keychain)
     
