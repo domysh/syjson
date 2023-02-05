@@ -82,6 +82,11 @@ class SyncedList(InnerIterObject):
         res = val.pop(*args,**kargs)
         self.sync(val)
         return res
+        
+    def remove(self,*args,**kargs):
+        val = self.val()
+        val.remove(*args,**kargs)
+        self.sync(val)
 
     def index(self,arg): return self.var().index(arg)
 
