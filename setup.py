@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="syjson",
-    version="2.1.5",
+    version="{{VERSION_PLACEHOLDER}}",
     author="DomySh",
     author_email="me@domysh.com",
     install_requires=["orjson"],

@@ -1,6 +1,6 @@
 import threading, os, orjson
 
-__version__ = "2.1.5"
+__version__ = "{{VERSION_PLACEHOLDER}}"
 
 class InnerObject:
     """ A general Synced variable """
@@ -115,11 +115,12 @@ class SyJson(SyncedDict):
     """ create a variable directly linked with a file,
     you can write values directly into the file and read in the sameway"""
 
-    def __init__(self,path:str, create_file:bool=True, pretty:bool=False, cache:bool = True):
+    def __init__(self,path:str, create_file:bool=True, pretty:bool=False, cache:bool = True, encoding="utf-8"):
         self.file_path = os.path.abspath(path)
+        self._file_encoding = encoding
         if not os.path.exists(self.file_path):
             if create_file:
-                with open(self.file_path,'wt',encoding='utf-8') as fl:
+                with open(self.file_path,'wt',encoding=self._file_encoding) as fl:
                     fl.write('')
             else:
                 raise FileNotFoundError(f'The file {path} doesn\'t exist!')
@@ -158,7 +159,7 @@ class SyJson(SyncedDict):
     def _file_read(self):
         self.f_lock.acquire()
         try:
-            with open(self.file_path,'r',encoding='utf-8') as fl:
+            with open(self.file_path,'r',encoding=self._file_encoding) as fl:
                 f = fl.read()
             if f != '': return orjson.loads(f)
             else: return {}

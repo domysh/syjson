@@ -29,11 +29,12 @@ synced_json = SyJson(
     "file.json",           #Path of the json file
     create_file = True,    #If the file does not exists,
                            #this will automatically create that file
-    pretty = None          #If setted to a number, the file will have an
+    pretty = None,         #If setted to a number, the file will have an
                            #indentation of 'pretty' spaces
-    cache = True           #The file is readed only the first time with this option set to
+    cache = True,          #The file is readed only the first time with this option set to
                            #True, if your file have to be modified during the execution set this to false
                            #(Useful for debugging)
+    encoding = "utf-8"     #JSON file encoding
 )
 ```
 
