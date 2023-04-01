@@ -1,5 +1,7 @@
 import threading, os, orjson
 
+__version__ = "2.1.5"
+
 class InnerObject:
     """ A general Synced variable """
 
