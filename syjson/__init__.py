@@ -117,7 +117,7 @@ class SyJson(SyncedDict):
         self.file_path = os.path.abspath(path)
         if not os.path.exists(self.file_path):
             if create_file:
-                with open(self.file_path,'wt') as fl:
+                with open(self.file_path,'wt',encoding='utf-8') as fl:
                     fl.write('')
             else:
                 raise FileNotFoundError(f'The file {path} doesn\'t exist!')
@@ -156,7 +156,7 @@ class SyJson(SyncedDict):
     def _file_read(self):
         self.f_lock.acquire()
         try:
-            with open(self.file_path,'r') as fl:
+            with open(self.file_path,'r',encoding='utf-8') as fl:
                 f = fl.read()
             if f != '': return orjson.loads(f)
             else: return {}
